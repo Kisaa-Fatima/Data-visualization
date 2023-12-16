@@ -1,0 +1,323 @@
+
+
+
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Convertion and identifivation</title>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <link rel="stylesheet"
+    href="upload.css"
+    text="type/css" >
+    </link>
+
+        <div class="cart">
+        <div class="title" align="center"style="font-family:'Brush Script MT', cursive;font-weight: bold;font-size: 30px;text-shadow: 1.5px 1.5px orange;color:black">
+          Convertion and identification
+        </div>
+</head>
+<body>
+
+<header>
+  <h1>CSV to Adjacency Matrix</h1>
+</header>
+<body background='C:\Users\Lenovo\Desktop\download.jpg'></body>
+<section id="upload-section">
+  <label for="file-upload">Upload CSV File:</label>
+  <input type="file" id="file-upload" accept=".csv">
+  <button onclick="handleUpload()">Upload</button>
+</section>
+
+<section id="output-section" style="display: none;">
+  <h2>Adjacency Matrix</h2>
+  <pre id="adjacency-matrix"></pre>
+</section>
+
+<section id="connectivity-section" style="display: none;">
+  <h2>Connectivity Status</h2>
+  <p id="connectivity-message"></p>
+  <button id="reset-button" onclick="resetAndUpload()" style="display: none;">Reset and Upload Another File</button>
+</section>
+
+<section id="graph-type-section" style="display: none;">
+  <h2>Graph Type</h2>
+  <p id="graph-type-message"></p>
+</section>
+
+
+  <h2>--Layout Options are below--</h2>
+  
+<div class="dropdown">
+     
+  <div class="dropdown-content">
+      <h2>-General Graph:</h2>
+    <a href="grid.html">Grid</a>
+    <a href="chord.html">Chord</a>
+    <h2>-General Graph:</h2>
+    <a href="icicle.html">Icicle</a>
+    <a href="rheingold.html">Reigngold_Tilford</a>
+    <h2>-Directed acyclic graph:</h2>
+    <a href="sugiyama.html">Sugiyama</a>
+    <a href="radialsugiyama.html">Radial_Sugiyama</a>
+   
+    
+  </div>
+</div>
+
+<script>
+  function GridLayout() {
+    
+    console.log("GridLayout function called");
+    window.location.href = 'grid.html';
+  }
+
+  function ChordDiagram() {
+    window.location.href = 'chord.html';
+  }
+
+  function SugiyamaLayout() {
+    window.location.href = 'sugiyama.html';
+  }
+
+  function RadialSugiyamaLayout() {
+    window.location.href = 'radialsugiyama.html';
+  }
+
+  function RheingoldTilfordLayout() {
+    window.location.href = 'rheingold.html';
+  }
+
+  function IcicleLayout() {
+    window.location.href = 'icicle.html';
+  }
+</script>
+
+<script>
+  // Function to handle file upload and conversion
+  function handleUpload() {
+    const fileInput = document.getElementById('file-upload');
+    const outputSection = document.getElementById('output-section');
+    const adjacencyMatrixOutput = document.getElementById('adjacency-matrix');
+    const connectivitySection = document.getElementById('connectivity-section');
+    const connectivityMessage = document.getElementById('connectivity-message');
+    const resetButton = document.getElementById('reset-button');
+    const graphTypeSection = document.getElementById('graph-type-section');
+    const graphTypeMessage = document.getElementById('graph-type-message');
+
+    // Check if a file is selected
+    if (!fileInput.files.length) {
+      alert('Please select a file.');
+      return;
+    }
+
+    // Read the content of the uploaded file
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const csvContent = e.target.result;
+
+      // Convert CSV file content to adjacency matrix
+      const adjacencyMatrix = convertCSVtoAdjacencyMatrix(csvContent);
+
+      // Display the adjacency matrix
+      adjacencyMatrixOutput.textContent = JSON.stringify(adjacencyMatrix, null, 2);
+      outputSection.style.display = 'block';
+
+      // Check graph connectivity
+      const isConnected = isGraphConnected(adjacencyMatrix);
+
+      // Display graph connectivity status
+      connectivityMessage.textContent = isConnected
+        ? 'The graph is connected.'
+        : 'The graph has disconnected components. Please upload a connected graph.';
+      connectivitySection.style.display = 'block';
+
+      if (isConnected) {
+        // Determine graph type
+        const graphType = determineGraphType(adjacencyMatrix);
+        graphTypeMessage.textContent = `Graph Type: ${graphType}`;
+        graphTypeSection.style.display = 'block';
+      } else {
+        // Hide graph type section if the graph is not connected
+        graphTypeSection.style.display = 'none';
+      }
+
+      // Show reset button if the graph is not connected
+      resetButton.style.display = isConnected ? 'none' : 'block';
+    };
+    reader.readAsText(fileInput.files[0]);
+  }
+
+  // Function to reset and upload another file
+  function resetAndUpload() {
+    // Clear previous output and reset file input
+    document.getElementById('adjacency-matrix').textContent = '';
+    document.getElementById('file-upload').value = '';
+    document.getElementById('output-section').style.display = 'none';
+    document.getElementById('connectivity-section').style.display = 'none';
+    document.getElementById('graph-type-section').style.display = 'none';
+  }
+
+
+
+  // Function to convert CSV content to adjacency matrix
+  function convertCSVtoAdjacencyMatrix(csvContent) {
+    const rows = csvContent.trim().split('\n');
+    const adjacencyMatrix = [];
+
+    // Extract node names from the first row
+    const nodes = rows[0].split(',').map(node => node.trim());
+
+    // Iterate over the rows to fill in the adjacency matrix
+    for (let i = 1; i < rows.length; i++) {
+      const rowValues = rows[i].split(',').map(value => parseInt(value.trim(), 10));
+
+      // Include node name in the row
+      const matrixRow = [nodes[i - 1], ...rowValues];
+
+      adjacencyMatrix.push(matrixRow);
+    }
+
+    return adjacencyMatrix;
+  }
+  function isGraphConnected(adjacencyMatrix) {
+  var visited = new Array(adjacencyMatrix.length).fill(false);
+
+  function dfs(node) {
+    visited[node] = true;
+    for (var neighbor = 0; neighbor < adjacencyMatrix.length; neighbor++) {
+      if (adjacencyMatrix[node][neighbor] === 1 && !visited[neighbor]) {
+        dfs(neighbor);
+      }
+    }
+  }
+
+  // Start DFS from each unvisited node
+  for (var node = 0; node < adjacencyMatrix.length; node++) {
+    if (!visited[node]) {
+      dfs(node);
+    }
+  }
+
+  // Check if all nodes are visited
+  return visited.every(function (value) {
+    return value;
+  });
+}
+
+  // // Function to check if the graph is connected
+  // function isGraphConnected(adjacencyMatrix) {
+  //   var visited = new Array(adjacencyMatrix.length).fill(false);
+
+  //   function dfs(node) {
+  //     visited[node] = true;
+  //     for (var neighbor = 0; neighbor < adjacencyMatrix.length; neighbor++) {
+  //       if (adjacencyMatrix[node][neighbor] === 1 && !visited[neighbor]) {
+  //         dfs(neighbor);
+  //       }
+  //     }
+  //   }
+
+  //   // Start DFS from the first node
+  //   dfs(0);
+                  
+  //   // Check if all nodes are visited
+  //   return visited.every(function (value) {
+  //     return value;
+  //   });
+  // }
+  
+
+  // Function to determine the type of the graph (Tree, DAG, General Graph)
+  function determineGraphType(adjacencyMatrix) {
+    const isTree = isGraphTree(adjacencyMatrix);
+    const isDAG = isDirectedAcyclicGraph(adjacencyMatrix);
+
+    if (isTree) {
+      return 'Tree';  
+    } else if (isDAG) {
+      return 'Directed Acyclic Graph (DAG)';
+    } else {
+      return 'General Graph';
+    }
+  }
+
+  // Function to check if the graph is a tree
+  function isGraphTree(adjacencyMatrix) {
+    // A connected acyclic graph is a tree
+    return isGraphConnected(adjacencyMatrix) && !hasCycle(adjacencyMatrix);
+  }
+
+  // Function to check if the graph has a cycle
+  function hasCycle(adjacencyMatrix) {
+    const visited = new Array(adjacencyMatrix.length).fill(false);
+    const stack = new Array(adjacencyMatrix.length).fill(false);
+
+    function dfs(node) {
+      visited[node] = true;
+      stack[node] = true;
+
+      for (let neighbor = 0; neighbor < adjacencyMatrix.length; neighbor++) {
+        if (adjacencyMatrix[node][neighbor] === 1) {
+          if (!visited[neighbor]) {
+            if (dfs(neighbor)) return true;
+          } else if (stack[neighbor]) {
+            return true;
+          }
+        }
+      }
+
+      stack[node] = false;
+      return false;
+    }
+
+    for (let node = 0; node < adjacencyMatrix.length; node++) {
+      if (!visited[node]) {
+        if (dfs(node)) return true;
+      }
+    }
+
+    return false;
+  }
+
+  // Function to check if the graph is a directed acyclic graph (DAG)
+  function isDirectedAcyclicGraph(adjacencyMatrix) {
+    const visited = new Array(adjacencyMatrix.length).fill(false);
+    const recursionStack = new Array(adjacencyMatrix.length).fill(false);
+
+    function isDAGDFS(node) {
+      visited[node] = true;
+      recursionStack[node] = true;
+
+      for (let neighbor = 0; neighbor < adjacencyMatrix.length; neighbor++) {
+        if (adjacencyMatrix[node][neighbor] === 1) {
+          if (!visited[neighbor]) {
+            if (isDAGDFS(neighbor)) return true;
+          } else if (recursionStack[neighbor]) {
+            return true;
+          }
+        }
+      }
+
+      recursionStack[node] = false;
+      return false;
+    }
+
+    for (let node = 0; node < adjacencyMatrix.length; node++) {
+      if (!visited[node]) {
+        if (isDAGDFS(node)) return false;
+      }
+    }
+
+    return true;
+  }
+</script>
+
+</body>
+</html>
+
+
+
+
+

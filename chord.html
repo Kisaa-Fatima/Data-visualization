@@ -1,0 +1,156 @@
+<body>
+    <link rel="stylesheet"
+    href="rheingold.css"
+    text="type/css" >
+    </link>
+    <div class="title" align="center"style="font-family:'Brush Script MT', cursive;font-weight: bold;font-size: 40px;text-shadow: 1.5px 1.5px orange;color:black">
+        Chord Layout
+    </div></body>
+<!-- <!- ===================chord============== -->
+
+ <!DOCTYPE html>
+<meta charset="UTF-8">
+<title>Chord Diagram</title>
+<style>
+  /* Add some padding to the body */
+  body {
+    padding: 20px;
+  }
+
+  /* Style the upload button */
+  #upload-button {
+    font-size: 16px;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+ }
+
+ #upload-button:hover {
+    background-color: #45a049;
+ }
+</style>
+
+ <script src="https://d3js.org/d3.v6.min.js"></script> 
+
+<script src="https://d3js.org/d3-chord.v1.min.js"></script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+ <body>
+ <input type="file" id="file" style="display: none;">
+ <button id="upload-button">Upload CSV</button>
+ <script>
+    var svg = d3.select("body").append("svg").attr("width", 1000).attr("height", 1000);
+
+    var matrix = [];
+    var labels = [];
+
+    document.getElementById("upload-button").addEventListener("click", function() {
+      document.getElementById("file").click();
+    });
+
+    document.getElementById("file").addEventListener("change", function() {
+      var file = this.files[0];
+      var reader = new FileReader();
+
+      reader.onload = function(e) {
+        var csv = d3.csvParse(e.target.result);
+        labels = csv.columns.slice(1);
+        matrix = csv.columns.map(function(id) {
+          return csv.map(function(row) {
+            return +row[id];
+          });
+        });
+
+        drawChordDiagram();
+      };
+
+      reader.readAsText(file);
+    });
+
+    function drawChordDiagram() {
+      svg.selectAll("*").remove();
+
+      var chord = d3.chord()
+        .padAngle(0.05)
+        .sortSubgroups(d3.descending);
+
+      var outerRadius = 500 / 2 - 100,
+        innerRadius = outerRadius - 20;
+
+      var ribbon = d3.ribbon()
+        .radius(innerRadius);
+
+      var arc = d3.arc()
+        .innerRadius(innerRadius)
+        .outerRadius(outerRadius);
+
+      var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+      var g = svg.append("g")
+        .attr("transform", "translate(" + 500 / 2 + "," + 500 / 2 + ")")
+        .datum(chord(matrix));
+
+      g.append("g")
+        .attr("class", "ribbons")
+        .selectAll("path")
+        .data(function(chords) { return chords; })
+        .enter().append("path")
+        .attr("d", ribbon)
+        .style("fill", function(d) { return color(d.target.index); })
+        .style("stroke", function(d) { return color(d.target.index); });
+
+      g.append("g")
+        .attr("class", "arcs")
+        .selectAll("g")
+        .data(function(chords) { return chords.groups; })
+        .enter().append("g")
+        .attr("class", "arc")
+        .on("mouseover", function(d, i) {
+          d3.selectAll(".arc path").style("opacity", function(p) {
+            return p.index === i ? 1 : 0.1;
+          });
+        })
+        .on("mouseout", function(d, i) {
+          d3.selectAll(".arc path").style("opacity", 1);
+        })
+        .append("path")
+        .attr("d", arc)
+        .style("fill", function(d) { return color(d.index); })
+        .style("stroke", function(d) { return color(d.index); });
+
+      var text = g.append("g")
+        .attr("class", "labels")
+        .selectAll("text")
+        .data(function(chords) { return chords.groups; })
+        .enter().append("text")
+        .attr("dy", ".35em")
+        .attr("class", "label-text")
+        .attr("transform", function(d) {
+          return "rotate(" + (d.startAngle + d.endAngle) / 2 * (180 / Math.PI) + ")" +
+            "translate(" + (outerRadius - 20) + ")" +
+            (d.startAngle > Math.PI ? "rotate(180)" : "");
+        })
+        .text(function(d, i) { return labels[i]; })
+        .style("fill", function(d) { return color(d.index); });
+
+      g.append("g")
+        .attr("class", "lines")
+        .selectAll("line")
+        .data(function(chords) { return chords; })
+        .enter().append("line")
+        .attr("x1", function(d) { return d.source.value * Math.cos(d.source.startAngle + d.source.endAngle / 2); })
+        .attr("y1", function(d) { return d.source.value * Math.sin(d.source.startAngle + d.source.endAngle / 2); })
+        .attr("x2", function(d) { return d.target.value * Math.cos(d.target.startAngle + d.target.endAngle / 2); })
+        .attr("y2", function(d) { return d.target.value * Math.sin(d.target.startAngle + d.target.endAngle / 2); })
+        .style("stroke", "#000")
+        .style("stroke-width", 0.5);
+    }
+ </script>
+</body>
+
+</html> 

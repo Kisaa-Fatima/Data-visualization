@@ -1,0 +1,97 @@
+<body>
+    <link rel="stylesheet"
+    href="icicle.css"
+    text="type/css" >
+    </link>
+<div class="bag">
+    <div class="title" align="center"style="font-family:'Brush Script MT', cursive;font-weight: bold;font-size: 40px;text-shadow: 1.5px 1.5px orange;color:black">
+        Grid Layout
+    </div></body>
+
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>CSV Visualization</title>
+      <script src="https://d3js.org/d3.v5.min.js"></script>
+    </head>
+    <body>
+    
+    <input type="file" id="fileInput" accept=".csv">
+    <button onclick="visualizeCSV()">Visualize</button>
+    
+    <div id="svg-container"></div>
+    
+    <script>
+      function visualizeCSV() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+    
+        if (!file) {
+          alert('Please choose a CSV file');
+          return;
+        }
+    
+        const reader = new FileReader();
+    
+        reader.onload = function(e) {
+          const csvData = d3.csvParse(e.target.result);
+          const nodes = csvData.columns;
+          drawGrid(nodes);
+          drawNodes(nodes);
+        };
+    
+        reader.readAsText(file);
+      }
+    
+      function drawGrid(nodes) {
+        const gridSize = nodes.length * 50;
+        const svg = d3.select('#svg-container').html('').append('svg').attr('width', gridSize).attr('height', gridSize);
+    
+        svg.selectAll('line.horizontal').data(d3.range(nodes.length)).enter()
+          .append('line')
+          .attr('x1', 0)
+          .attr('y1', d => d * 50)
+          .attr('x2', gridSize)
+          .attr('y2', d => d * 50)
+          .attr('stroke', 'gray');
+    
+        svg.selectAll('line.vertical').data(d3.range(nodes.length)).enter()
+          .append('line')
+          .attr('x1', d => d * 50)
+          .attr('y1', 0)
+          .attr('x2', d => d * 50)
+          .attr('y2', gridSize)
+          .attr('stroke', 'gray');
+      }
+    
+      function drawNodes(nodes) {
+        const svg = d3.select('svg');
+    
+        const nodeCircles = svg.selectAll('circle')
+          .data(nodes)
+          //grp for each circle and text
+          .enter().append('g')  
+          //grp to appropriate position
+          .attr('transform', (d, i) => `translate(${i * 50}, ${i * 50})`);  
+    
+        //circle 
+        nodeCircles.append('circle')
+          .attr('r', 10)
+          .attr('fill', 'orange');
+    
+        // text to every grp
+        nodeCircles.append('text')
+          .attr('x', 0)
+          .attr('y', 4)
+          .attr('text-anchor', 'middle')
+          //node name as text 
+          .text(d => d);  
+      }
+    </script>
+    
+    </body>
+    </html>
+    

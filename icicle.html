@@ -1,0 +1,212 @@
+<body>
+    <link rel="stylesheet"
+    href="icicle.css"
+    text="type/css" >
+    </link>
+<div class="bag">
+    <div class="title" align="center"style="font-family:'Brush Script MT', cursive;font-weight: bold;font-size: 40px;text-shadow: 1.5px 1.5px orange;color:black">
+        Icicle Layout
+    </div></body>
+<!-- ==========        icicle    ======= -->
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Icicle Tree Layout with D3.js - User Input CSV</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+  <input type="file" id="fileInput">
+  <svg id="icicle"></svg>
+
+  <script>
+    document.getElementById('fileInput').addEventListener('change', handleFileSelect, false);
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const csv = e.target.result;
+        processData(csv);
+      };
+
+      reader.readAsText(file);
+    }
+
+    function processData(csv) {
+      const parsedData = d3.csvParse(csv);
+      const root = buildHierarchy(parsedData);
+      createIcicleTreeLayout(root);
+    }
+
+    function buildHierarchy(data) {
+      const root = { name: 'Root', children: [] };
+
+      data.forEach(datum => {
+        const categories = datum.Category.split('/').map(category => category.trim());
+
+        let currentNode = root;
+        categories.forEach(category => {
+          let childNode = currentNode.children.find(child => child.name === category);
+          if (!childNode) {
+            childNode = { name: category, children: [] };
+            currentNode.children.push(childNode);
+          }
+          currentNode = childNode;
+        });
+      });
+
+      return root;
+    }
+
+    function createIcicleTreeLayout(root) {
+      const width = 800;
+      const height = 600;
+
+      const svg = d3.select("#icicle")
+        .attr("width", width)
+        .attr("height", height)
+        .style("font", "14px sans-serif");
+
+      const partition = data => {
+        const root = d3.hierarchy(data)
+          .sum(d => 1)
+          .sort((a, b) => b.value - a.value);
+
+        return d3.partition()
+          .size([height, width])
+          (root);
+      };
+
+      const rootPartition = partition(root);
+
+      const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+      svg.selectAll('rect')
+        .data(rootPartition.descendants())
+        .join('rect')
+        .attr('x', d => d.y0)
+        .attr('y', d => d.x0)
+        .attr('width', d => d.y1 - d.y0)
+        .attr('height', d => d.x1 - d.x0)
+        .attr('fill', d => color((d.children ? d : d.parent).data.name))
+        .attr('stroke', '#fff');
+
+      svg.selectAll('text')
+        .data(rootPartition.descendants())
+        .join('text')
+        .attr('x', d => (d.y0 + d.y1) / 2)
+        .attr('y', d => (d.x0 + d.x1) / 2)
+        .attr('dy', '0.35em')
+        .attr('text-anchor', 'middle')
+        .text(d => d.data.name)
+        .attr('fill', 'white');
+    }
+  </script>
+</body>
+</html> -->
+
+<!-- ===============sir data icicle======== -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Icicle Tree Layout with D3.js - User Input CSV</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+  <input type="file" id="fileInput">
+  <svg id="icicle"></svg>
+
+  <script>
+    document.getElementById('fileInput').addEventListener('change', handleFileSelect, false);
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const csv = e.target.result;
+        processData(csv);
+      };
+
+      reader.readAsText(file);
+    }
+
+    function processData(csv) {
+      const rows = csv.trim().split('\n');
+      const headers = rows[0].split(',');
+
+      const root = { name: 'Root', children: [] };
+
+      for (let i = 1; i < rows.length; i++) {
+        const values = rows[i].split(',');
+        let currentNode = root;
+
+        for (let j = 1; j < values.length; j++) {
+          const category = headers[j].trim();
+          const value = parseInt(values[j].trim());
+
+          let childNode = currentNode.children.find(child => child.name === category);
+          if (!childNode) {
+            childNode = { name: category, value, children: [] };
+            currentNode.children.push(childNode);
+          } else {
+            childNode.value += value;
+          }
+
+          currentNode = childNode;
+        }
+      }
+
+      createIcicleTreeLayout(root);
+    }
+
+    function createIcicleTreeLayout(root) {
+      const width = 800;
+      const height = 600;
+
+      const svg = d3.select("#icicle")
+        .attr("width", width)
+        .attr("height", height)
+        .style("font", "14px sans-serif");
+
+      const partition = data => {
+        const root = d3.hierarchy(data)
+          .sum(d => d.value)
+          .sort((a, b) => b.value - a.value);
+
+        return d3.partition()
+          .size([height, width])
+          (root);
+      };
+
+      const rootPartition = partition(root);
+
+      const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+      svg.selectAll('rect')
+        .data(rootPartition.descendants())
+        .join('rect')
+        .attr('x', d => d.y0)
+        .attr('y', d => d.x0)
+        .attr('width', d => d.y1 - d.y0)
+        .attr('height', d => d.x1 - d.x0)
+        .attr('fill', d => color((d.children ? d : d.parent).data.name))
+        .attr('stroke', '#fff');
+
+      svg.selectAll('text')
+        .data(rootPartition.descendants())
+        .join('text')
+        .attr('x', d => (d.y0 + d.y1) / 2)
+        .attr('y', d => (d.x0 + d.x1) / 2)
+        .attr('dy', '0.35em')
+        .attr('text-anchor', 'middle')
+        .text(d => d.data.name)
+        .attr('fill', 'white');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<body>
+  <link rel="stylesheet"
+  href="rheingold.css"
+  text="type/css" >
+  </link>
+
+  <div class="title" align="center"style="font-family:'Brush Script MT', cursive;font-weight: bold;font-size: 40px;text-shadow: 1.5px 1.5px orange;color:black">
+      Radial Sugiyama Layout
+  </div></body>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D3.js Radial Sugiyama Layout</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+
+<label for="csvFile">Choose a CSV file:</label>
+<input type="file" id="csvFile" accept=".csv">
+
+<script>
+document.getElementById('csvFile').addEventListener('change', handleFileSelect);
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+
+  if (file) {
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+      const csvData = d3.csvParse(e.target.result);
+      const adjacencyMatrix = convertCsvToAdjacencyMatrix(csvData);
+      generateRadialSugiyama(adjacencyMatrix);
+    };
+
+    reader.readAsText(file);
+  }
+}
+
+function convertCsvToAdjacencyMatrix(csvData) {
+  const adjacencyMatrix = [];
+
+  csvData.forEach(row => {
+    const rowData = Object.values(row).map(Number);
+    adjacencyMatrix.push(rowData);
+  });
+
+  return adjacencyMatrix;
+}
+
+function calculateNodeLayers(adjMatrix) {
+  const layers = [];
+  const visited = new Array(adjMatrix.length).fill(false);
+
+  function dfs(node, layer) {
+    visited[node] = true;
+
+    if (!layers[layer]) {
+      layers[layer] = [];
+    }
+
+    layers[layer].push(node);
+
+    for (let i = 0; i < adjMatrix.length; i++) {
+      if (adjMatrix[node][i] === 1 && !visited[i]) {
+        dfs(i, layer + 1);
+      }
+    }
+  }
+
+  for (let i = 0; i < adjMatrix.length; i++) {
+    if (!visited[i]) {
+      dfs(i, 0);
+    }
+  }
+
+  return layers;
+}
+
+function generateRadialSugiyama(adjMatrix) {
+  const nodeLayers = calculateNodeLayers(adjMatrix);
+
+  const nodeRadius = 150;
+  const layerRadius = 70;
+
+  const svg = d3.select("body").append("svg")
+    .attr("width", 800)
+    .attr("height", 800)
+    .append("g")
+    .attr("transform", "translate(400,400)"); // Center the SVG
+
+  const nodeColor = "orange";
+  const edgeColor = "orange";
+
+  const longestPath = nodeLayers.reduce((acc, layer) => Math.max(acc, layer.length), 0);
+
+  nodeLayers.forEach((layer, i) => {
+    const angle = (2 * Math.PI * i) / nodeLayers.length;
+
+    layer.forEach((node, j) => {
+      const nodeAngle = (2 * Math.PI * j) / layer.length + angle;
+
+      const x = nodeRadius * Math.cos(nodeAngle);
+      const y = nodeRadius * Math.sin(nodeAngle);
+
+      svg.append("circle")
+        .attr("cx", x)
+        .attr("cy", y)
+        .attr("r", 20)
+        .attr("fill", nodeColor);
+
+      svg.append("text")
+        .attr("x", x)
+        .attr("y", y)
+        .attr("dy", "0.15em")
+        .attr("text-anchor", "middle")
+        .attr("fill", "white")
+        .text(node);
+
+      for (let k = 0; k < adjMatrix.length; k++) {
+        if (adjMatrix[node][k] === 1) {
+          const targetLayer = nodeLayers.findIndex(layer => layer.includes(k));
+          const targetNodeAngle = (2 * Math.PI * nodeLayers[targetLayer].indexOf(k)) / nodeLayers[targetLayer].length + angle;
+          const targetX = (nodeRadius + layerRadius) * Math.cos(targetNodeAngle);
+          const targetY = (nodeRadius + layerRadius) * Math.sin(targetNodeAngle);
+
+          svg.append("line")
+            .attr("x1", x)
+            .attr("y1", y)
+            .attr("x2", targetX)
+            .attr("y2", targetY)
+            .attr("stroke", edgeColor);
+        }
+      }
+    });
+  });
+}
+</script>
+
+</body>
+</html>

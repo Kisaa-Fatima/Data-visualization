@@ -1,0 +1,10 @@
+body{
+    background-image: url(backk.jpg);
+    background-attachment: fixed;
+    background-size: auto;
+  }
+
+  label {
+    font-weight: bold;
+    color: orange;
+  }
